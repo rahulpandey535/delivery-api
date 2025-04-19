@@ -1,4 +1,7 @@
+from flask import Flask, request, jsonify
 from itertools import permutations, product
+
+app = Flask(__name__)
 
 product_centers = {
     'A': ['C1'], 'B': ['C1'], 'C': ['C1', 'C3'],
@@ -71,3 +74,16 @@ def calculate_minimum_delivery_cost(order):
             min_cost = min(min_cost, cost)
 
     return min_cost
+
+@app.route('/calculate_cost', methods=['POST'])
+def calculate_cost():
+    data = request.json
+    order = data.get('order', {})
+    
+    # Calculate the minimum delivery cost
+    min_cost = calculate_minimum_delivery_cost(order)
+    
+    return jsonify({'minimum_cost': min_cost})
+
+if __name__ == '__main__':
+    app.run(debug=True)
