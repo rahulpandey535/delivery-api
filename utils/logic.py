@@ -6,22 +6,19 @@ product_centers = {
     'G': ['C3'], 'H': ['C3'], 'I': ['C3']
 }
 
-# Distance to L1 from each center
-to_l1 = {
+distances_to_l1 = {
     'C1': 10,
     'C2': 30,
     'C3': 33
 }
 
-# Distance between centers
-between_centers = {
+center_distances = {
     ('C1', 'C2'): 20,
     ('C1', 'C3'): 25,
     ('C2', 'C3'): 15
 }
-# Add reverse paths
-for (a, b), d in list(between_centers.items()):
-    between_centers[(b, a)] = d
+for (a, b), d in list(center_distances.items()):
+    center_distances[(b, a)] = d
 
 COST_PER_KM = 2
 
@@ -31,8 +28,8 @@ def calculate_minimum_delivery_cost(order):
     for product, qty in order.items():
         if qty > 0:
             available_centers = product_centers.get(product, [])
-            chosen_center = min(available_centers, key=lambda c: to_l1[c])
-            centers_needed.add(chosen_center)
+            best_center = min(available_centers, key=lambda c: distances_to_l1[c])
+            centers_needed.add(best_center)
 
     if not centers_needed:
         return 0
@@ -40,31 +37,26 @@ def calculate_minimum_delivery_cost(order):
     min_cost = float('inf')
 
     for perm in permutations(centers_needed):
-        # Try all ways of inserting L1 after 1 or more pickups
-        # Ex: C1 → L1 → C3 → L1 or C1 → C3 → L1
         n = len(perm)
-        # Generate all drop patterns (where L1 will be dropped after pickup)
         for drop_pattern in product([False, True], repeat=n):
             path = []
             for i in range(n):
                 path.append(perm[i])
                 if drop_pattern[i]:
                     path.append('L1')
-            # Always end with L1 if not already
             if path[-1] != 'L1':
                 path.append('L1')
 
-            # Now calculate cost of this route
             cost = 0
             for i in range(len(path) - 1):
                 src, dest = path[i], path[i + 1]
 
-                if src in to_l1 and dest == 'L1':
-                    cost += to_l1[src] * COST_PER_KM
-                elif src == 'L1' and dest in to_l1:
-                    cost += to_l1[dest] * COST_PER_KM
-                elif src in to_l1 and dest in to_l1:
-                    cost += between_centers.get((src, dest), float('inf')) * COST_PER_KM
+                if src in distances_to_l1 and dest == 'L1':
+                    cost += distances_to_l1[src] * COST_PER_KM
+                elif src == 'L1' and dest in distances_to_l1:
+                    cost += distances_to_l1[dest] * COST_PER_KM
+                elif src in distances_to_l1 and dest in distances_to_l1:
+                    cost += center_distances.get((src, dest), float('inf')) * COST_PER_KM
                 else:
                     cost = float('inf')
                     break
