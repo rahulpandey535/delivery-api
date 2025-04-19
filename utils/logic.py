@@ -19,7 +19,7 @@ center_distances = {
 }
 
 # Ensure distances are bidirectional
-for (a, b), d in list(center_distances.items()):
+for (a, b), d in center_distances.items():
     center_distances[(b, a)] = d
 
 COST_PER_KM = 2
