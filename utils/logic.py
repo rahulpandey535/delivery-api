@@ -19,7 +19,6 @@ def calculate_minimum_delivery_cost(order):
     
     for product, qty in order.items():
         if qty > 0 and product in product_centers:
-            # Choose the center with the shortest distance if multiple
             best_center = min(product_centers[product], key=lambda c: distances[c])
             centers_needed.add(best_center)
 
@@ -31,7 +30,7 @@ def calculate_minimum_delivery_cost(order):
     for perm in permutations(centers_needed):
         cost = 0
         for center in perm:
-            cost += 2 * distances[center] * COST_PER_KM  # round trip
+            cost += distances[center] * COST_PER_KM  # cost from center to L1
         min_cost = min(min_cost, cost)
 
     return min_cost
