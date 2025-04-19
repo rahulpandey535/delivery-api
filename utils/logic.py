@@ -1,4 +1,4 @@
-from itertools import permutations
+from itertools import permutations, product
 
 product_centers = {
     'A': ['C1'], 'B': ['C1'], 'C': ['C1', 'C3'],
@@ -6,27 +6,23 @@ product_centers = {
     'G': ['C3'], 'H': ['C3'], 'I': ['C3']
 }
 
-# Distances between centers and L1
 distances_to_l1 = {
     'C1': 10,
     'C2': 30,
     'C3': 33
 }
 
-# Distances between centers (assumed symmetric for simplicity)
 center_distances = {
     ('C1', 'C2'): 20,
     ('C1', 'C3'): 25,
     ('C2', 'C3'): 15
 }
-# Add reverse mappings
 for (a, b), d in list(center_distances.items()):
     center_distances[(b, a)] = d
 
 COST_PER_KM = 2
 
 def calculate_minimum_delivery_cost(order):
-    # Step 1: Find which centers are needed based on the order
     centers_needed = set()
 
     for product, qty in order.items():
@@ -37,22 +33,38 @@ def calculate_minimum_delivery_cost(order):
     if not centers_needed:
         return 0
 
-    min_cost = float("inf")
+    min_cost = float('inf')
 
-    # Step 2: Try all permutations of centers to find optimal delivery path
+    # Build all permutations of center visit orders
     for perm in permutations(centers_needed):
-        cost = 0
-        route = list(perm) + ['L1']
+        # Now for each permutation, try adding L1 in different places
+        for drop_pattern in product([True, False], repeat=len(perm)):
+            cost = 0
+            route = []
+            for i, center in enumerate(perm):
+                route.append(center)
+                if drop_pattern[i]:  # Drop at L1 after this center
+                    route.append('L1')
 
-        for i in range(len(route) - 1):
-            from_loc = route[i]
-            to_loc = route[i + 1]
+            # Always end with L1 if not already
+            if route[-1] != 'L1':
+                route.append('L1')
 
-            if to_loc == 'L1':
-                cost += distances_to_l1[from_loc] * COST_PER_KM
-            else:
-                cost += center_distances.get((from_loc, to_loc), float("inf")) * COST_PER_KM
+            # Compute total cost of this route
+            for i in range(len(route)-1):
+                src = route[i]
+                dest = route[i+1]
 
-        min_cost = min(min_cost, cost)
+                if src in ['C1', 'C2', 'C3'] and dest == 'L1':
+                    cost += distances_to_l1[src] * COST_PER_KM
+                elif src in ['C1', 'C2', 'C3'] and dest in ['C1', 'C2', 'C3']:
+                    cost += center_distances.get((src, dest), float('inf')) * COST_PER_KM
+                elif src == 'L1' and dest in ['C1', 'C2', 'C3']:
+                    cost += distances_to_l1[dest] * COST_PER_KM
+                else:
+                    cost = float('inf')
+                    break
+
+            min_cost = min(min_cost, cost)
 
     return min_cost
